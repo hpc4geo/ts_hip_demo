@@ -31,9 +31,11 @@ ex2 : ex2_res.o ex2.o
 	$(LINK.C) -o $@ $^ $(LDLIBS)
 
 
-ex3_res.o : ex3_res.c
-	hipcc -o $@ $^ $(LDLIBS)
+ex3_res.o : ex3_res.cpp
+	hipcc -c ex3_res.cpp $(PETSC_CC_INCLUDES)
 
+ex3 : ex3_res.o ex3.o
+	$(LINK.C) -o $@ $^ $(LDLIBS)
 
 #
 #  When linking in a multi-files with Fortran source files a.F90, b.c, and c.cxx
