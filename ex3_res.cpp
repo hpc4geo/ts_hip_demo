@@ -135,6 +135,7 @@ PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
   //dim3 blocks((len+1024-1)/1024,1,1);
   dim3 blocks, threads;
   build_sizes(len, &blocks, &threads);
+  /*
   {
     long int bm,tm;
     printf("blocks "); bm = printd3(&blocks); 
@@ -142,7 +143,7 @@ PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
     printf("max %ld | N %ld\n",bm * tm,(long int)len);
 
   }
-
+  */
   __RHSFunction_hip <<< blocks, threads, 0, 0 >>> (len, f);
 
   //for (i=0; i<len; i++) {
