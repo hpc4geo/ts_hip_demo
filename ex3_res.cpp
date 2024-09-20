@@ -8,21 +8,42 @@
 
 void build_sizes(long int N,dim3 *b, dim3 *t)
 {
+  b->x = b->y = b->z = 1;
+  t->x = t->y = t->z = 1;
+
   if (N < GRID_MAX * THREAD_MAX) {
+    printf("1d ->\n");
+
     t->x = THREAD_MAX; t->y = 1; t->z = 1;
     b->x = (N + GRID_MAX-1)/GRID_MAX; b->y = 1; b->z = 1;
+
     return;
   }
 
   if (N < GRID_MAX * GRID_MAX * THREAD_MAX) {
+    printf("2d ->\n");
+
     long int bJ = (N-1)/(GRID_MAX*GRID_MAX);
     t->x = THREAD_MAX; t->y = 1; t->z = 1;
-    b->x = GRID_MAX; b->y = bJ; b->z = 1;
+    b->x = GRID_MAX; b->y = bJ+1; b->z = 1;
 
+    return;
   }
 
-}
 
+  long int Nt = (long int)(N/THREAD_MAX);
+  if ( Nt < GRID_MAX * GRID_MAX * GRID_MAX) {
+    printf("3d ->\n");
+
+    long int bK = (long int) ( Nt/(GRID_MAX*GRID_MAX) );
+    long int N2d = Nt - GRID_MAX * bK;
+    long int bJ = N2d/GRID_MAX;
+    t->x = THREAD_MAX; t->y = 1; t->z = 1;
+    b->x = GRID_MAX; b->y = GRID_MAX; b->z = bK+1;
+
+    return;
+  }
+}
 
 //#define HCC_ENABLE_PRINTF
 
@@ -85,6 +106,10 @@ PetscErrorCode RHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
+long int printd3(dim3 *b) {
+  printf("(%ld %ld %ld) -> max items %ld\n",(long)b->x,(long)b->y,(long)b->z, (long)b->x*b->y*b->z);
+  return (long int)b->x*b->y*b->z;
+}
 
 PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
 {
@@ -106,8 +131,18 @@ PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
 
   // Maximum Block Dimensions: 1024 x 1024 x 1024
   //Maximum Threads Per Block: 1024
-  dim3 threads(1024,1,1);
-  dim3 blocks((len+1024-1)/1024,1,1);
+  //dim3 threads(1024,1,1);
+  //dim3 blocks((len+1024-1)/1024,1,1);
+  dim3 blocks, threads;
+  build_sizes(len, &blocks, &threads);
+  {
+    long int bm,tm;
+    printf("blocks "); bm = printd3(&blocks); 
+    printf("threads "); tm = printd3(&threads);
+    printf("max %ld | N %ld\n",bm * tm,(long int)len);
+
+  }
+
   __RHSFunction_hip <<< blocks, threads, 0, 0 >>> (len, f);
 
   //for (i=0; i<len; i++) {
