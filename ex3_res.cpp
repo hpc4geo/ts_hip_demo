@@ -154,7 +154,7 @@ PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
   //PetscCall(VecRestoreArrayReadAndMemType(U, &u));
   //PetscCall(VecRestoreArrayAndMemType(F, &f));
 
-  //ierr = hipDeviceSynchronize();
+  ierr = hipDeviceSynchronize();
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 } /* extern C */
