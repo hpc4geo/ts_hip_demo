@@ -32,7 +32,7 @@ ex2 : ex2_res.o ex2.o
 
 
 ex3_res.o : ex3_res.cpp
-	hipcc -c ex3_res.cpp $(PETSC_CC_INCLUDES)
+	hipcc $(HIPC_FLAGS) -c ex3_res.cpp $(PETSC_CC_INCLUDES)
 
 ex3 : ex3_res.o ex3.o
 	$(LINK.C) -o $@ $^ $(LDLIBS)
