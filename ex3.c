@@ -34,7 +34,7 @@ PetscErrorCode xxx(void)
   TS           ts; /* ODE integrator */
   Vec          U;  /* solution will be stored here */
   PetscMPIInt  commsize;
-  PetscInt     i, len = 1024*1024;
+  PetscInt     i, len = 1024*1024*512;
   PetscScalar  *u = NULL;
   MPI_Comm     comm;
 
@@ -43,12 +43,6 @@ PetscErrorCode xxx(void)
   comm = PETSC_COMM_WORLD;
   PetscCallMPI(MPI_Comm_size(comm, &commsize));
   if (commsize > 1) SETERRQ(comm,PETSC_ERR_SUP,"This is a serial example. MPI parallelism is not supported");
-
-  PetscCall(TSCreate(comm, &ts));
-  PetscCall(TSSetType(ts, TSRK));
-  PetscCall(TSSetProblemType(ts, TS_NONLINEAR));
-
-  PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_seq, NULL));
 
   /* initial condition */
   PetscCall(VecCreate(comm, &U));
@@ -64,6 +58,20 @@ PetscErrorCode xxx(void)
     u[i] = 1.0;
   }
   PetscCall(VecRestoreArray(U, &u));
+
+  PetscCall(TSCreate(comm, &ts));
+  PetscCall(TSSetType(ts, TSRK));
+  PetscCall(TSSetProblemType(ts, TS_NONLINEAR));
+  {
+	PetscBool isseq;
+	PetscCall(PetscObjectTypeCompare((PetscObject)U,"seq",&isseq));
+	if (isseq) {
+	  PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_seq, NULL)); 
+	} else {
+	  PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_hip, NULL));
+	  PetscCall(TSSetRHSFunction(ts, NULL, xRHSFunction_hip, NULL));
+         }
+  }
 
   PetscCall(TSSetSolution(ts, U));
   PetscCall(TSSetMaxTime(ts, 1.0));
