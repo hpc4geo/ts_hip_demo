@@ -61,14 +61,15 @@ void build_sizes(long int N,dim3 *b, dim3 *t)
 
 void build_sizes_blocksize(long int N,dim3 *b, dim3 *t)
 {
-  b->x = b->y = b->z = 1;
+  b->x = b->y = b->z = 0;
   t->x = t->y = t->z = 1;
 
-  if (N >= GRID_MAX*GRID_MAX*GRID_MAX) { printf("Error - N too large\n"); }
+  if (N >= GRID_MAX*GRID_MAX*GRID_MAX) { printf("Error - N too large\n"); return; }
+
   if (N < GRID_MAX) {
     printf("1d ->\n");
 
-    b->x = (N + GRID_MAX-1)/GRID_MAX; b->y = 1; b->z = 1;
+    b->x = (long int)(N/GRID_MAX) + 1; b->y = 1; b->z = 1;
 
     return;
   }
@@ -76,18 +77,17 @@ void build_sizes_blocksize(long int N,dim3 *b, dim3 *t)
   if (N < GRID_MAX * GRID_MAX) {
     printf("2d ->\n");
 
-    long int bJ = (N-1)/(GRID_MAX*GRID_MAX);
-    b->x = GRID_MAX; b->y = bJ+1; b->z = 1;
+    long int bJ = N/GRID_MAX;
+    b->x = GRID_MAX; b->y = bJ + 1; b->z = 1;
 
     return;
   }
-
 
   if ( N < GRID_MAX * GRID_MAX * GRID_MAX) {
     printf("3d ->\n");
 
     long int bK = (long int) ( N/(GRID_MAX*GRID_MAX) );
-    b->x = GRID_MAX; b->y = GRID_MAX; b->z = bK+1;
+    b->x = GRID_MAX; b->y = GRID_MAX; b->z = bK + 1;
 
     return;
   }
@@ -145,7 +145,7 @@ int main(int a,char *b[])
   printf("max %ld -- ",sum); if (N <= sum) printf("ok (N=%ld)\n",N); else { printf("error N=%ld\n",N);}
 
 
-  N = 1024 * 1024 * 4; build_sizes_blocksize(N,&blk,&th);
+  N = 1024 + 5; build_sizes_blocksize(N,&blk,&th);
   sum = printd3(&blk)*printd3(&th);
   printf("max %ld -- ",sum); if (N <= sum) printf("ok (N=%ld)\n",N); else { printf("error N=%ld\n",N);}
 
