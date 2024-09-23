@@ -44,7 +44,7 @@ PetscErrorCode ex5(void)
   TS           ts; /* ODE integrator */
   Vec          U;  /* solution will be stored here */
   PetscMPIInt  commsize;
-  PetscInt     i, len = 5;
+  PetscInt     i, len = 1024 * 1024 * 5;
   PetscScalar  *u = NULL;
   MPI_Comm     comm;
   Context      *ctx;
@@ -104,7 +104,7 @@ PetscErrorCode ex5(void)
 
   PetscCall(TSSolve(ts, U));
 
-  VecView(U,PETSC_VIEWER_STDOUT_WORLD);
+  //VecView(U,PETSC_VIEWER_STDOUT_WORLD);
 
   PetscCall(VecDestroy(&U));
   PetscCall(TSDestroy(&ts));
