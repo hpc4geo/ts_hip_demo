@@ -15,6 +15,7 @@ PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx);
 PetscErrorCode ParamsCreate(int np,Params *p)
 {
   int i;
+  PetscFunctionBeginUser;
   p->npoints = np;
   PetscCall(PetscCalloc1(np,&p->elements));
   for (i=0; i<np; i++) {
@@ -25,11 +26,12 @@ PetscErrorCode ParamsCreate(int np,Params *p)
 
 PetscErrorCode ParamsCreate_Device(Params *p,Params *device_p)
 {
+  PetscFunctionBeginUser;
   device_p->npoints = p->npoints;
   device_p->elements = NULL;
   #if PetscDefined(HAVE_HIP)
     if (!device_p->elements) {
-      hipMalloc(&device_p->elements, sizeof(double)*device_p->npoints);
+      hipMalloc((void**)&device_p->elements, sizeof(double)*device_p->npoints);
     }
     hipMemcpyHtoD(device_p->elements, p->elements, sizeof(double)*device_p->npoints);
   #endif
@@ -76,18 +78,18 @@ PetscErrorCode ex5(void)
   PetscCalloc1(1,&ctx->host);
   PetscCalloc1(1,&ctx->device);
 
-  ParamsCreate(len, ctx->host);
-  ParamsCreate_Device(ctx->host, ctx->device);
+  PetscCall(ParamsCreate(len, ctx->host));
+  PetscCall(ParamsCreate_Device(ctx->host, ctx->device));
 
   {
     PetscBool isseq;
 
     PetscCall(PetscObjectTypeCompare((PetscObject)U,"seq",&isseq));
     if (isseq) {
-	     PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_seq, NULL));
+	     PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_seq, (void*)ctx));
      } else {
-       //PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_hip, NULL));
-       PetscCall(TSSetRHSFunction(ts, NULL, xRHSFunction_hip, NULL));
+       //PetscCall(TSSetRHSFunction(ts, NULL, RHSFunction_hip, (void*)ctx));
+       PetscCall(TSSetRHSFunction(ts, NULL, xRHSFunction_hip, (void*)ctx));
      }
   }
 
@@ -102,11 +104,7 @@ PetscErrorCode ex5(void)
 
   PetscCall(TSSolve(ts, U));
 
-  Vec F;
-  VecDuplicate(U,&F);
-  VecSet(F,2.0);
-  VecAXPY(U,1.0,F);
-  //VecView(U,PETSC_VIEWER_STDOUT_(comm));
+  VecView(U,PETSC_VIEWER_STDOUT_WORLD);
 
   PetscCall(VecDestroy(&U));
   PetscCall(TSDestroy(&ts));

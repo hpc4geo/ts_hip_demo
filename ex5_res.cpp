@@ -55,18 +55,18 @@ long int printd3(dim3 *b) {
 }
 
 
-//#define HCC_ENABLE_PRINTF
+#define HCC_ENABLE_PRINTF
 
-__global__ void __RHSFunction_hip(PetscInt len, PetscScalar f[])
+__global__ void __RHSFunction_hip(PetscInt len, Params params, PetscScalar f[])
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
 
   //printf("block index %d %d %d | thread index %d,%d,%d --> i %d\n",(int)blockIdx.x,(int)blockIdx.y,(int)blockIdx.z,(int)threadIdx.x,(int)threadIdx.y,(int)threadIdx.z, i);
   if (i >= len) return;
 
-    //printf("  i %d (b %d -> t %d)\n",i,(int)blockIdx.x,(int)threadIdx.x);
+    printf("  i %d (b %d -> t %d)  val %+1.4e npoints %d\n",i,(int)blockIdx.x,(int)threadIdx.x, params.elements[i],params.npoints);
 
-    f[i] = (PetscScalar)i + 0.1;
+    f[i] = params.elements[i] + 0.1;
 }
 
 #endif
@@ -146,8 +146,8 @@ PetscErrorCode xRHSFunction_hip(TS ts, PetscReal t, Vec U, Vec F, void *ctx)
 
   }
 
-  __RHSFunction_hip <<< blocks, threads, 0, 0 >>> (len, f, *(data->device));
-#elseif
+  __RHSFunction_hip <<< blocks, threads, 0, 0 >>> (len, *(data->device), f);
+#else
   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only valid with HIP support");
 #endif
 
